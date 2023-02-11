@@ -10,7 +10,7 @@ Train PyTorch FasterRCNN models easily on any custom dataset. Choose between off
 
 ## Get Started
 
-​																								[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](#link)
+​																								[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://drive.google.com/file/d/1_vsAKxGp1M2V9uB62S_SrFTTm8SeG-XK/view?usp=sharing)
 
 ## Custom Model Naming Conventions
 
