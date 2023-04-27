@@ -192,15 +192,15 @@ class CustomDataset(Dataset):
             boxes, labels, area, iscrowd, (image_width, image_height)
 
     def check_image_and_annotation(
-        self, 
-        xmin, 
-        ymin, 
-        xmax, 
-        ymax, 
-        width, 
-        height, 
-        orig_data=False
-    ):
+            self, 
+            xmin, 
+            ymin, 
+            xmax, 
+            ymax, 
+            width, 
+            height, 
+            orig_data=False
+        ):
         """
         Check that all x_max and y_max are not more than the image
         width or height.
@@ -209,34 +209,32 @@ class CustomDataset(Dataset):
             ymax = height
         if xmax > width:
             xmax = width
+        if xmin < 0:
+            xmin = 0
+        if ymin < 0:
+            ymin = 0
         if xmax - xmin <= 1.0:
             if orig_data:
-                # print(
-                    # '\n',
-                    # '!!! xmax is equal to xmin in data annotations !!!'
-                    # 'Please check data'
-                # )
-                # print(
+                if xmax < width:
+                    # print(
                     # 'Increasing xmax by 1 pixel to continue training for now...',
                     # 'THIS WILL ONLY BE LOGGED ONCE',
                     # '\n'
-                # )
-                self.log_annot_issue_x = False
-            xmin = xmin - 1
+                    # )
+                    xmax = xmin + 1
+                elif xmin > 0:
+                    xmin = xmax - 1
         if ymax - ymin <= 1.0:
             if orig_data:
-                # print(
-                #     '\n',
-                #     '!!! ymax is equal to ymin in data annotations !!!',
-                #     'Please check data'
-                # )
-                # print(
-                #     'Increasing ymax by 1 pixel to continue training for now...',
-                #     'THIS WILL ONLY BE LOGGED ONCE',
-                #     '\n'
-                # )
-                self.log_annot_issue_y = False
-            ymin = ymin - 1
+                if ymax < height:
+                    # print(
+                    # 'Increasing ymax by 1 pixel to continue training for now...',
+                    # 'THIS WILL ONLY BE LOGGED ONCE',
+                    # '\n'
+                    # )
+                    ymax = ymin + 1
+                elif ymin > 0:
+                    ymin = ymax - 1
         return xmin, ymin, xmax, ymax
 
 
@@ -349,6 +347,14 @@ class CustomDataset(Dataset):
                                      labels=labels)
             image_resized = sample['image']
             target['boxes'] = torch.Tensor(sample['bboxes']).to(torch.int64)
+        
+        # Add this loop to apply the check_image_and_annotation function to each bounding box
+        checked_boxes = []
+        for box in target["boxes"]:
+            xmin, ymin, xmax, ymax = box
+            xmin, ymin, xmax, ymax = self.check_image_and_annotation(xmin, ymin, xmax, ymax, self.img_size, self.img_size)
+            checked_boxes.append([xmin, ymin, xmax, ymax])
+        target["boxes"] = torch.tensor(checked_boxes)
 
         # Fix to enable training without target bounding boxes,
         # see https://discuss.pytorch.org/t/fasterrcnn-images-with-no-objects-present-cause-an-error/117974/4

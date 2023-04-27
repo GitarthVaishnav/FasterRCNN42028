@@ -120,6 +120,7 @@ def evaluate(
     classes=None,
     colors=None
 ):
+    val_saved_image = []
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
