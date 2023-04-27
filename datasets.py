@@ -210,9 +210,9 @@ class CustomDataset(Dataset):
         if xmax > width:
             xmax = width
         if xmin < 0:
-            xmin = 0
+            xmin = 0.01
         if ymin < 0:
-            ymin = 0
+            ymin = 0.01
         if xmax - xmin <= 1.0:
             if orig_data:
                 if xmax < width:
