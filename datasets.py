@@ -192,7 +192,16 @@ class CustomDataset(Dataset):
             boxes, labels, area, iscrowd, (image_width, image_height)
 
 
-    def check_image_and_annotation(self, xmin, ymin, xmax, ymax, width, height, orig_data=False):
+    def check_image_and_annotation(
+        self, 
+        xmin, 
+        ymin, 
+        xmax, 
+        ymax, 
+        width, 
+        height, 
+        orig_data=False
+        ):
         """
         Check that all x_max and y_max are not more than the image
         width or height.
