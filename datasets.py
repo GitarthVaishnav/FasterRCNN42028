@@ -355,14 +355,17 @@ class CustomDataset(Dataset):
         
         # Add this loop to apply the check_image_and_annotation function to each bounding box
         checked_boxes = []
-        for box in target["boxes"]:
+        checked_labels = []
+        for i, box in enumerate(target["boxes"]):
             xmin, ymin, xmax, ymax = box
             xmin, ymin, xmax, ymax = self.check_image_and_annotation(xmin, ymin, xmax, ymax, self.img_size, self.img_size)
             if xmax > xmin and ymax > ymin:
                 checked_boxes.append([xmin, ymin, xmax, ymax])
+                checked_labels.append(target["labels"][i])
             else:
-                print(f"Removed invalid box {box} from image index {idx}")
-        target["boxes"] = torch.tensor(checked_boxes)
+                print(f"Removed invalid box {box} of {target['labels'][i]} from image index {idx}")
+        target["boxes"] = torch.tensor(checked_boxes, dtype=torch.float32)
+        target["labels"] = torch.tensor(checked_labels, dtype=torch.int64)
 
         # Fix to enable training without target bounding boxes,
         # see https://discuss.pytorch.org/t/fasterrcnn-images-with-no-objects-present-cause-an-error/117974/4
