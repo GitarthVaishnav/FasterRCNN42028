@@ -191,15 +191,16 @@ class CustomDataset(Dataset):
         return image, image_resized, orig_boxes, \
             boxes, labels, area, iscrowd, (image_width, image_height)
 
+
     def check_image_and_annotation(
-            self, 
-            xmin, 
-            ymin, 
-            xmax, 
-            ymax, 
-            width, 
-            height, 
-            orig_data=False
+        self, 
+        xmin, 
+        ymin, 
+        xmax, 
+        ymax, 
+        width, 
+        height, 
+        orig_data=False
         ):
         """
         Check that all x_max and y_max are not more than the image
@@ -213,28 +214,25 @@ class CustomDataset(Dataset):
             xmin = 0
         if ymin < 0:
             ymin = 0
-        if xmax - xmin <= 1.0:
+
+        if xmax - xmin <= 0:
             if orig_data:
                 if xmax < width:
-                    # print(
-                    # 'Increasing xmax by 1 pixel to continue training for now...',
-                    # 'THIS WILL ONLY BE LOGGED ONCE',
-                    # '\n'
-                    # )
                     xmax = xmin + 1
                 elif xmin > 0:
                     xmin = xmax - 1
-        if ymax - ymin <= 1.0:
+
+        if ymax - ymin <= 0:
             if orig_data:
                 if ymax < height:
-                    # print(
-                    # 'Increasing ymax by 1 pixel to continue training for now...',
-                    # 'THIS WILL ONLY BE LOGGED ONCE',
-                    # '\n'
-                    # )
                     ymax = ymin + 1
                 elif ymin > 0:
                     ymin = ymax - 1
+
+        # # Ensure ymin is at least 0.01
+        # ymin = max(ymin, 0.01)
+        # xmin = max(xmin, 0.01)
+
         return xmin, ymin, xmax, ymax
 
 
@@ -332,7 +330,14 @@ class CustomDataset(Dataset):
         target["iscrowd"] = iscrowd
         image_id = torch.tensor([idx])
         target["image_id"] = image_id
-
+        
+        # Add this loop to apply the check_image_and_annotation function to each bounding box
+        checked_boxes = []
+        for box in target["boxes"]:
+            xmin, ymin, xmax, ymax = box
+            xmin, ymin, xmax, ymax = self.check_image_and_annotation(xmin, ymin, xmax, ymax, self.img_size, self.img_size, True)
+            checked_boxes.append([xmin, ymin, xmax, ymax])
+        target["boxes"] = torch.tensor(checked_boxes, dtype=torch.float32)
 
         if self.use_train_aug: # Use train augmentation if argument is passed.
             train_aug = get_train_aug()
@@ -353,7 +358,10 @@ class CustomDataset(Dataset):
         for box in target["boxes"]:
             xmin, ymin, xmax, ymax = box
             xmin, ymin, xmax, ymax = self.check_image_and_annotation(xmin, ymin, xmax, ymax, self.img_size, self.img_size)
-            checked_boxes.append([xmin, ymin, xmax, ymax])
+            if xmax > xmin and ymax > ymin:
+                checked_boxes.append([xmin, ymin, xmax, ymax])
+            else:
+                print(f"Removed invalid box {box} from image index {idx}")
         target["boxes"] = torch.tensor(checked_boxes)
 
         # Fix to enable training without target bounding boxes,
